@@ -6,3 +6,6 @@ from .employee_requests import get_all_employees
 from .employee_requests import get_single_employee
 from .customer_requests import get_all_customers
 from .customer_requests import get_single_customer
+from .animal_requests import create_animal
+from .employee_requests import create_employee
+from .customer_requests import create_customer

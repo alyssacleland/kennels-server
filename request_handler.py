@@ -1,5 +1,5 @@
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from views import get_all_animals, get_single_animal, get_all_locations, get_single_location, get_all_employees, get_single_employee, get_single_customer, get_all_customers
+from views import get_all_animals, get_single_animal, get_all_locations, get_single_location, get_all_employees, get_single_employee, get_single_customer, get_all_customers, create_animal, create_employee, create_customer
 import json  # import at the top of the main module
 
 
@@ -106,15 +106,42 @@ class HandleRequests(BaseHTTPRequestHandler):
     # It handles any POST request.
 
     def do_POST(self):
-        """Handles POST requests to the server
-        """
-        # Set response code to 'Created'
         self._set_headers(201)
-
         content_len = int(self.headers.get('content-length', 0))
+        # TODO: Understand this line better:
         post_body = self.rfile.read(content_len)
-        response = f"received post request:<br>{post_body}"
-        self.wfile.write(response.encode())
+
+        # Convert JSON string to a Python dictionary
+        post_body = json.loads(post_body)
+
+        # Parse the URL
+        # unpack tuple. tuple is on the right. the parenthesis in the first part are kinda misleading.
+        (resource, id) = self.parse_url(self.path)
+
+    ####### ANIMAL! #######
+        # Initialize new animal
+        new_animal = None
+
+        # Add a new animal to the list. Don't worry about
+        # the orange squiggle, you'll define the create_animal
+        # function next.
+        if resource == "animals":
+            new_animal = create_animal(post_body)
+
+            # Encode the new animal and send in response
+            self.wfile.write(json.dumps(new_animal).encode())
+
+    ####### EMPLOYEE! #######
+        new_employee = None
+        if resource == "employees":
+            new_employee = create_employee(post_body)
+            self.wfile.write(json.dumps(new_employee).encode())
+
+    ####### CUSTOMER! #######
+        new_customer = None
+        if resource == "customers":
+            new_customer = create_customer(post_body)
+            self.wfile.write(json.dumps(new_customer).encode())
 
     # Here's a method on the class that overrides the parent's method.
     # It handles any PUT request.
