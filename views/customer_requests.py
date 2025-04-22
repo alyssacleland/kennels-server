@@ -1,3 +1,7 @@
+import sqlite3
+import json
+from models import Customer
+
 CUSTOMERS = [
     {
         "id": 1,
@@ -7,16 +11,63 @@ CUSTOMERS = [
 
 
 def get_all_customers():
-    return CUSTOMERS
+
+    #  open the database
+    with sqlite3.connect("./kennel.sqlite3") as conn:
+
+        conn.row_factory = sqlite3.Row
+        db_cursor = conn.cursor()
+
+        # ask for some rows
+        db_cursor.execute("""
+        SELECT
+            c.id,
+            c.name,
+            c.address,
+            c.email,
+            c.password
+        FROM customer c
+        """)
+
+        customers = []
+
+        # actually retrieve data to python memory
+        dataset = db_cursor.fetchall()
+
+        # turn data into objects
+        for row in dataset:
+            customer = Customer(
+                row['id'], row['name'], row['address'], row['email'], row['password'])
+            customers.append(customer.__dict__)
+
+    return customers
 
 
 def get_single_customer(id):
-    requested_customer = None
+    # open database
+    with sqlite3.connect("./kennel.sqlite3") as conn:
+        conn.row_factory = sqlite3.Row
+        db_cursor = conn.cursor()
 
-    for customer in CUSTOMERS:
-        if customer["id"] == id:
-            requested_customer = customer
-    return requested_customer
+        # sql query
+        db_cursor.execute("""
+        SELECT
+            c.id,
+            c.name,
+            c.address,
+            c.email,
+            c.password
+        FROM customer c
+        WHERE c.id = ?
+        """, (id,))
+
+        # fetch result into python memory
+        data = db_cursor.fetchone()
+
+        # build python obj
+        customer = Customer(data['id'], data['name'],
+                            data['address'], data['email'], data['password'])
+        return customer.__dict__
 
 
 def create_customer(customer):

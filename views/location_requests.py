@@ -1,3 +1,8 @@
+import json
+import sqlite3
+from models import Location
+
+
 LOCATIONS = [
     {
         "id": 1,
@@ -13,17 +18,57 @@ LOCATIONS = [
 
 
 def get_all_locations():
-    return LOCATIONS
+
+    #  open the database
+    with sqlite3.connect("./kennel.sqlite3") as conn:
+
+        conn.row_factory = sqlite3.Row
+        db_cursor = conn.cursor()
+
+        # ask for some rows
+        db_cursor.execute("""
+        SELECT
+            l.id,
+            l.name,
+            l.address
+        FROM location l
+        """)
+
+        locations = []
+
+        # actually retrieve data to python memory
+        dataset = db_cursor.fetchall()
+
+        # turn data into objects
+        for row in dataset:
+            location = Location(row['id'], row['name'], row['address'])
+            locations.append(location.__dict__)
+
+    return locations
 
 
 def get_single_location(id):
-    requested_location = None
+    # open database
+    with sqlite3.connect("./kennel.sqlite3") as conn:
+        conn.row_factory = sqlite3.Row
+        db_cursor = conn.cursor()
 
-    for location in LOCATIONS:
-        if location["id"] == id:
-            requested_location = location
+        # sql query
+        db_cursor.execute("""
+        SELECT
+            l.id,
+            l.name,
+            l.address
+        FROM location l
+        WHERE l.id = ?
+        """, (id,))
 
-    return requested_location
+        # fetch result into python memory
+        data = db_cursor.fetchone()
+
+        # build python obj
+        location = Location(data['id'], data['name'], data['address'])
+        return location.__dict__
 
 
 def delete_location(id):

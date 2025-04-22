@@ -1,3 +1,8 @@
+import sqlite3
+import json
+from models import Employee
+
+
 EMPLOYEES = [
     {
         "id": 1,
@@ -7,15 +12,61 @@ EMPLOYEES = [
 
 
 def get_all_employees():
-    return EMPLOYEES
+
+    #  open the database
+    with sqlite3.connect("./kennel.sqlite3") as conn:
+
+        conn.row_factory = sqlite3.Row
+        db_cursor = conn.cursor()
+
+        # ask for some rows
+        db_cursor.execute("""
+        SELECT
+            e.id,
+            e.name,
+            e.address,
+            e.location_id
+        FROM employee e
+        """)
+
+        employees = []
+
+        # actually retrieve data to python memory
+        dataset = db_cursor.fetchall()
+
+        # turn data into objects
+        for row in dataset:
+            employee = Employee(
+                row['id'], row['name'], row['address'], row['location_id'])
+            employees.append(employee.__dict__)
+
+    return employees
 
 
 def get_single_employee(id):
-    requested_employee = None
-    for employee in EMPLOYEES:
-        if employee["id"] == id:
-            requested_employee = employee
-    return requested_employee
+    # open database
+    with sqlite3.connect("./kennel.sqlite3") as conn:
+        conn.row_factory = sqlite3.Row
+        db_cursor = conn.cursor()
+
+        # sql query
+        db_cursor.execute("""
+        SELECT
+            e.id,
+            e.name,
+            e.address,
+            e.location_id
+        FROM employee e
+        WHERE e.id = ?
+        """, (id,))
+
+        # fetch result into python memory
+        data = db_cursor.fetchone()
+
+        # build python obj
+        employee = Employee(data['id'], data['name'],
+                            data['address'], data['location_id'])
+        return employee.__dict__
 
 
 def create_employee(employee):
