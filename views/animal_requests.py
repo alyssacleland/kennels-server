@@ -22,7 +22,7 @@ ANIMALS = [
         "species": "Cat",
         "locationId": 2,
         "customerId": 1,
-        "status": "Admitted"
+        "status": "Admitted!"
 
     }
 ]
