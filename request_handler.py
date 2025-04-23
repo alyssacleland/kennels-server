@@ -1,44 +1,43 @@
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from views import get_all_animals, get_single_animal, get_all_locations, get_single_location, get_all_employees, get_single_employee, get_single_customer, get_all_customers, create_animal, create_employee, create_customer, delete_animal, delete_location, delete_employee, delete_customer, update_animal, update_customer, update_employee, update_location
-import json  # import at the top of the main module
+from views import get_all_animals, get_single_animal, get_all_locations, get_single_location, get_all_employees, get_single_employee, get_single_customer, get_all_customers, create_animal, create_employee, create_customer, delete_animal, delete_location, delete_employee, delete_customer, update_animal, update_customer, update_employee, update_location, get_customer_by_email, get_animal_by_location_id, get_employee_by_location_id, get_animal_by_status
+import json
+from urllib.parse import urlparse, parse_qs
 
 
 # Here's a class. It inherits from another class.
 # For now, think of a class as a container for functions that
 # work together for a common purpose. In this case, that
 # common purpose is to respond to HTTP requests from a client.
+
+
 class HandleRequests(BaseHTTPRequestHandler):
-    def parse_url(self, path):
-        """takes a single input - the path of the request - and returns a tuple"""
-        # Just like splitting a string in JavaScript. If the
-        # path is "/animals/1", the resulting list will
-        # have "" at index 0, "animals" at index 1, and "1"
-        # at index 2.
-        # next line performs splitting url into a list of string values like ["", "animals", id(but still need to convert to an int)]
-        path_params = path.split("/")
-        # assigns the first index (animals if url is "/animals/1")
-        resource = path_params[1]
-        # assigns id to None for now
-        id = None
-
-        # Try to get the item at index 2
-        try:
-            # Convert the string "1" to the integer 1
-            # This is the new parseInt()
-            id = int(path_params[2])
-        except IndexError:
-            pass  # No route parameter exists: /animals
-        except ValueError:
-            pass  # Request had trailing slash: /animals/
-
-        return (resource, id)  # This is a tuple
-
     # This is a Docstring it should be at the beginning of all classes and functions
     # It gives a description of the class or function
     """Controls the functionality of any GET, PUT, POST, DELETE requests to the server
     """
 
+    def parse_url(self, path):
+        """Parse the url into the resource and id"""
+        parsed_url = urlparse(path)
+        path_params = parsed_url.path.split('/')  # ['', 'animals', 1]
+        resource = path_params[1]
+
+        # check if ufrl has a query string
+        if parsed_url.query:
+            # parse the query string into a DICTIONARY where keys are parameter names and values are the property values (after the = sign). also, apparently....??values are always lists (bc a query param can appear more than once) idk about that
+            query = parse_qs(parsed_url.query)
+            # return the resource (we got above at start of this method) and the parsed query dictionary
+            return (resource, query)
+
+        pk = None
+        try:
+            pk = int(path_params[2])
+        except (IndexError, ValueError):
+            pass
+        return (resource, pk)
+
     # Here's a class function
+
     def _set_headers(self, status):
         # Notice this Docstring also includes information about the arguments passed to the function
         """Sets the status code, Content-Type and Access-Control-Allow-Origin
@@ -68,38 +67,64 @@ class HandleRequests(BaseHTTPRequestHandler):
     # It handles any GET request.
     def do_GET(self):
         self._set_headers(200)
-        response = {}  # Default response
 
-        # Parse the URL and capture the tuple that is returned
-        (resource, id) = self.parse_url(self.path)
+        response = {}
 
-        if resource == "animals":
-            if id is not None:
-                response = get_single_animal(id)
+        # Parse URL and store entire tuple in a variable
+        parsed = self.parse_url(self.path)
 
-            else:
-                response = get_all_animals()
+        # If the path does not include a query parameter, continue with the original if block
+        if '?' not in self.path:
+            (resource, id) = parsed
 
-        elif resource == "locations":
-            # if the url was updated to have an id which it was with split, if url went that far. otherwise it was set to None (and not updated)
-            if id is not None:
-                response = get_single_location(id)
-            else:
-                response = get_all_locations()
+            # It's an if..else statement
+            if resource == "animals":
+                if id is not None:
+                    response = get_single_animal(id)
 
-        elif resource == "employees":
-            if id is not None:
-                response = get_single_employee(id)
-            else:
-                response = get_all_employees()
+                else:
+                    response = get_all_animals()
 
-        elif resource == "customers":
-            if id is not None:
-                response = get_single_customer(id)
-            else:
-                response = get_all_customers()
+            if resource == "locations":
+                if id is not None:
+                    response = get_single_location(id)
 
-                # TODO: understand this better
+                else:
+                    response = get_all_locations()
+            if resource == "employees":
+                if id is not None:
+                    response = get_single_employee(id)
+
+                else:
+                    response = get_all_employees()
+            if resource == "customers":
+                if id is not None:
+                    response = get_single_customer(id)
+
+                else:
+                    response = get_all_customers()
+
+        else:  # There is a ? in the path, run the query param functions
+            (resource, query) = parsed
+
+            # see if the query dictionary has an email key
+            if query.get('email') and resource == 'customers':
+                # [0] bc email will be in list format (b/c parse_qs does it like that)
+                response = get_customer_by_email(query['email'][0])
+
+            # see if the query dictionary has a location key and resource is animals
+            if query.get('location_id') and resource == 'animals':
+                response = get_animal_by_location_id(query['location_id'][0])
+
+            # if resource is employees and thye have a location_id
+            if query.get('location_id') and resource == 'employees':
+                response = get_employee_by_location_id(query['location_id'][0])
+
+            # if resource is animals and they have a status
+            if query.get('status') and resource == 'animals':
+                response = get_animal_by_status(query['status'][0])
+
+        # turn dict into json string to send
         self.wfile.write(json.dumps(response).encode())
 
     # Here's a method on the class that overrides the parent's method.

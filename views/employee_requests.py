@@ -98,3 +98,32 @@ def update_employee(id, new_employee):
         if employee["id"] == id:
             EMPLOYEES[index] = new_employee
             break
+
+
+def get_employee_by_location_id(location_id):
+    # open database
+    with sqlite3.connect("./kennel.sqlite3") as conn:
+        conn.row_factory = sqlite3.Row
+        db_cursor = conn.cursor()
+
+        # sql query
+        db_cursor.execute("""
+        SELECT
+            e.id,
+            e.name,
+            e.address,
+            e.location_id
+        FROM employee e
+        WHERE e.location_id = ?
+        """, (location_id,))
+
+        employees = []
+
+        # fetch result into python memory
+        data = db_cursor.fetchall()
+
+        for row in data:
+            employee = Employee(row['id'], row['name'],
+                                row['address'], row['location_id'])
+            employees.append(employee.__dict__)
+    return employees
