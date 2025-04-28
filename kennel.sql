@@ -73,3 +73,8 @@ FROM animal a
 WHERE a.id = 3
 
 -- above is just better practice early on for beig specific compared to: SELECT id, name, breed FROM animal where id = 3
+
+
+INSERT INTO `Animal` VALUES (null, "Daps", "Kennel", "Boxer", 2, 2);
+
+INSERT INTO `Employee` VALUES (null, "Kristen Norris", "100 Main St", 1);
