@@ -1,6 +1,6 @@
 import json
 import sqlite3
-from models import Location
+from models import Location, Employee
 
 
 LOCATIONS = [
@@ -63,12 +63,40 @@ def get_single_location(id):
         WHERE l.id = ?
         """, (id,))
 
-        # fetch result into python memory
         data = db_cursor.fetchone()
 
-        # build python obj
-        location = Location(data['id'], data['name'], data['address'])
-        return location.__dict__
+        if data is None:
+            return None  # or raise an error, or return {}
+
+        # build location obj
+        location = Location(data["id"], data["name"], data["address"])
+
+        # Get employees at this location
+        db_cursor.execute("""
+            SELECT 
+                e.id employee_id, 
+                e.name employee_name, 
+                e.location_id 
+            FROM Employee e
+            WHERE location_id = ?
+        """, (id,))
+
+        employees = [
+            {
+                "id": row["employee_id"],
+                "name": row["employee_name"],
+                "location_id": row["location_id"]
+            }
+            for row in db_cursor.fetchall()
+        ]
+        # make a dict
+        location_dict = location.__dict__
+        # convert each employee into a dict too
+        location_dict["employees"] = employees
+
+        # TODO: add animals too
+
+        return location_dict
 
 
 def delete_location(id):
