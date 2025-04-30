@@ -96,3 +96,17 @@ JOIN Location l
     ON l.id = a.location_id
 JOIN Customer c
     ON c.id = a.customer_id
+
+
+PRAGMA table_info(animal)
+
+
+-- check the schemas for all the table sin the database. if yo uwanna check a specific one, add another where, WHERE name = "Animal"
+SELECT sql 
+FROM sqlite_master 
+WHERE type = 'table' 
+
+
+
+
+SELECT * FROM Animal ORDER BY id DESC;
